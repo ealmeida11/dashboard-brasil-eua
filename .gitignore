@@ -1,0 +1,29 @@
+# Arquivos temporários e cache
+*.pyc
+__pycache__/
+.DS_Store
+Thumbs.db
+*.png
+*.jpg
+*.jpeg
+
+# Arquivos de desenvolvimento e teste
+*.ipynb
+*.html
+test_*.py
+check_*.py
+extrair_*.py
+relatorio_*.py
+analise_*.py
+setup.sh
+
+# Dados grandes (CSV) - serão disponibilizados via GitHub Releases
+dados_brasil_eua_exportacao.csv
+dados_brasil_eua_importacao.csv
+
+# Pastas de dados originais (muito grandes)
+export_data/
+import_data/
+
+# Arquivos Excel grandes
+TABELAS_AUXILIARES.xlsx 
