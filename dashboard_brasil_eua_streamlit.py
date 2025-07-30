@@ -803,8 +803,7 @@ def create_tariff_evolution_chart(export_data):
             weighted_tariff_sum += (current_tariff * row['VL_FOB_MI'] / total_export_value)
         current_scenario_tariff = weighted_tariff_sum
         
-        # Mostrar cenário atual
-        st.info(f"🎯 **Cenário Atual:** {current_scenario_tariff:.1f}% de tarifa efetiva ponderada")
+
     
     # Calcular tarifa efetiva para cada cenário teórico usando a MESMA base do simulador
     scenarios = {
