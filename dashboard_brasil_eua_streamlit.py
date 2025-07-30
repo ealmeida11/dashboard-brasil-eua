@@ -59,10 +59,38 @@ def load_data():
         tuple: (export_data, import_data) ou (None, None) em caso de erro
     """
     try:
-        # Carregando arquivos CSV processados anteriormente
+        # Tenta carregar arquivos CSV localmente primeiro
         export_data = pd.read_csv('dados_brasil_eua_exportacao.csv')
         import_data = pd.read_csv('dados_brasil_eua_importacao.csv')
         
+    except FileNotFoundError:
+        # Se não encontrar localmente, baixa do GitHub Release
+        release_base_url = "https://github.com/ealmeida11/dashboard-brasil-eua/releases/download/v1.0.0/"
+        export_file = 'dados_brasil_eua_exportacao.csv'
+        import_file = 'dados_brasil_eua_importacao.csv'
+        
+        try:
+            # Baixa dados de exportação
+            response = requests.get(release_base_url + export_file)
+            response.raise_for_status()
+            with open(export_file, 'wb') as f:
+                f.write(response.content)
+            
+            # Baixa dados de importação
+            response = requests.get(release_base_url + import_file)
+            response.raise_for_status()
+            with open(import_file, 'wb') as f:
+                f.write(response.content)
+            
+            # Carrega os dados baixados
+            export_data = pd.read_csv(export_file)
+            import_data = pd.read_csv(import_file)
+            
+        except Exception as download_error:
+            st.error("❌ Erro ao carregar dados")
+            return None, None
+    
+    try:
         # Convertendo colunas de data para datetime
         export_data['Data'] = pd.to_datetime(export_data['Data'])
         import_data['Data'] = pd.to_datetime(import_data['Data'])
@@ -73,37 +101,6 @@ def load_data():
             return None, None
             
         return export_data, import_data
-        
-    except FileNotFoundError as e:
-        # URLs dos arquivos no GitHub Release
-        release_base_url = "https://github.com/ealmeida11/dashboard-brasil-eua/releases/download/v1.0.0/"
-        export_file = 'dados_brasil_eua_exportacao.csv'
-        import_file = 'dados_brasil_eua_importacao.csv'
-        
-        try:
-            # Baixa dados de exportação silenciosamente
-            response = requests.get(release_base_url + export_file)
-            with open(export_file, 'wb') as f:
-                f.write(response.content)
-            
-            # Baixa dados de importação silenciosamente
-            response = requests.get(release_base_url + import_file)
-            with open(import_file, 'wb') as f:
-                f.write(response.content)
-            
-            # Tenta carregar novamente
-            export_data = pd.read_csv(export_file)
-            import_data = pd.read_csv(import_file)
-            
-            # Convertendo colunas de data para datetime
-            export_data['Data'] = pd.to_datetime(export_data['Data'])
-            import_data['Data'] = pd.to_datetime(import_data['Data'])
-            
-            return export_data, import_data
-            
-        except Exception as download_error:
-            st.error("❌ Erro ao carregar dados")
-            return None, None
     except Exception as e:
         st.error(f"❌ Erro ao carregar dados: {e}")
         return None, None
@@ -664,7 +661,7 @@ def main():
         export_data, import_data = load_data()
         
         if export_data is None or import_data is None:
-            st.error("❌ Erro ao carregar dados. Verifique a conexão e tente novamente.")
+            st.error("❌ Erro ao carregar dados")
             st.stop()
         
         trade_monthly = create_monthly_aggregation(export_data, import_data)
