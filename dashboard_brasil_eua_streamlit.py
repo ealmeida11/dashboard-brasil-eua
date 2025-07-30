@@ -674,7 +674,24 @@ def main():
         export_data, import_data = load_data()
         
         if export_data is None or import_data is None:
-            st.error("Erro ao carregar os dados. Verifique os arquivos CSV.")
+            st.error("❌ **Dados não disponíveis**")
+            st.warning("⚠️ Os arquivos CSV não foram encontrados e o GitHub Release ainda não foi criado.")
+            
+            st.info("📋 **Para resolver este problema:**")
+            st.markdown("""
+            1. **Acesse:** https://github.com/ealmeida11/dashboard-brasil-eua/releases
+            2. **Clique:** "Create a new release"
+            3. **Tag version:** `v1.0.0`
+            4. **Release title:** "Dados do Dashboard Brasil-EUA"
+            5. **Anexe os arquivos:**
+               - `dados_brasil_eua_exportacao.csv`
+               - `dados_brasil_eua_importacao.csv`
+            6. **Publish release**
+            
+            Após criar o release, o dashboard carregará automaticamente os dados!
+            """)
+            
+            st.info("💡 **Alternativa:** Faça upload manual dos arquivos CSV na pasta raiz do projeto.")
             st.stop()
         
         trade_monthly = create_monthly_aggregation(export_data, import_data)
