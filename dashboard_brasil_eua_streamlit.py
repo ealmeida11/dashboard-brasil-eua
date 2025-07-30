@@ -484,36 +484,162 @@ def create_top100_for_simulator(export_data):
     
     return final_table
 
+def get_trump_tariff(ncm_code, scenario="trump_final"):
+    """
+    Determina a tarifa baseada na lista do Trump e cenário temporal
+    scenarios: 'pre_trump', 'liberation_day', 'august_1st', 'trump_final'
+    """
+    # Cenários por data
+    if scenario == "pre_trump":
+        return 2.0  # Tarifa geral pré-Trump
+    
+    # Lista de códigos HS6 com tarifa de 0% (ISENTOS) - Energia, Minerais Críticos, Eletrônicos/TIC
+    trump_0_percent_codes = {
+        # ENERGIA
+        "270900", "271000", "271011", "271012", "271019", "271020", "271091", "271092", "271099",
+        "271111", "271112", "271113", "271114", "271119", "271121", "271129", "271210", "271220", 
+        "271290", "271311", "271312", "271320", "271390",
+        
+        # MINERAIS E METAIS CRÍTICOS
+        "260300", "260800", "260600", "280530", "282520", "282580", "284690", "284400",
+        
+        # ELETRÔNICOS & TIC
+        "847100", "847330", "848600", "851713", "851762", "852351", "852852", "854110", "854121", 
+        "854129", "854130", "854149", "854210", "854221", "854229", "854230", "854231", "854232", 
+        "854233", "854239", "854290"
+    }
+    
+    # Lista de códigos HS4 com tarifa de 25% (VEÍCULOS) - Seção 232 mantida
+    trump_25_percent_codes = {
+        # VEÍCULOS COMPLETOS
+        "8703",  # Passageiros
+        "8704",  # SUV/picape/comerciais leves
+        "8702",  # Vans/ônibus
+        
+        # PARTES & ACESSÓRIOS
+        "8708"   # Partes e acessórios para veículos
+    }
+    
+    # Lista de códigos HS6 com tarifa de 10% baseada na proposta do Trump (379 códigos únicos)
+    trump_10_percent_codes = {
+        "080121", "200830", "200911", "200912", "252510", "260111", "260112", "260900", "270111", "270112",
+        "270119", "270120", "270210", "270220", "270300", "270400", "270500", "270600", "270710", "270720",
+        "270730", "270740", "270750", "270791", "270799", "270810", "270820", "270900", "271012", "271019",
+        "271020", "271091", "271099", "271111", "271112", "271113", "271114", "271119", "271121", "271129",
+        "271210", "271220", "271290", "271311", "271312", "271320", "271390", "271410", "271490", "271500",
+        "271600", "280469", "281520", "281820", "282590", "282739", "290319", "310510", "310520", "310560",
+        "391721", "391722", "391723", "391729", "391731", "391733", "391739", "391740", "392690", "400829",
+        "400912", "400922", "400932", "400942", "401130", "401213", "401220", "401610", "401693", "401699",
+        "401700", "440729", "450490", "470200", "470311", "470319", "470321", "470329", "470411", "470419",
+        "470421", "470429", "470500", "470610", "470620", "470630", "470691", "470692", "470693", "482390",
+        "560721", "680299", "681280", "681299", "681320", "681381", "681389", "700721", "710691", "710812",
+        "720110", "720120", "720150", "720260", "720293", "720310", "720390", "730431", "730439", "730441",
+        "730449", "730451", "730459", "730490", "730630", "730640", "730650", "730661", "730669", "731210",
+        "731290", "732290", "732410", "732490", "732620", "741300", "760810", "760820", "800200", "810890",
+        "830210", "830220", "830242", "830249", "830260", "830710", "830790", "840710", "840890", "840910",
+        "841111", "841112", "841121", "841122", "841181", "841182", "841191", "841199", "841210", "841221",
+        "841229", "841231", "841239", "841280", "841290", "841319", "841320", "841330", "841350", "841360",
+        "841370", "841381", "841391", "841410", "841420", "841430", "841451", "841459", "841480", "841490",
+        "841510", "841581", "841582", "841583", "841590", "841810", "841830", "841840", "841861", "841869",
+        "841950", "841981", "841990", "842119", "842121", "842123", "842129", "842131", "842132", "842139",
+        "842410", "842511", "842519", "842531", "842539", "842542", "842549", "842699", "842810", "842820",
+        "842833", "842839", "842890", "844331", "844332", "847141", "847149", "847150", "847160", "847170",
+        "847989", "847990", "848310", "848330", "848340", "848350", "848360", "848390", "848410", "848490",
+        "850120", "850131", "850132", "850133", "850134", "850140", "850151", "850152", "850153", "850161",
+        "850162", "850163", "850171", "850172", "850180", "850211", "850212", "850213", "850220", "850231",
+        "850239", "850240", "850410", "850431", "850432", "850433", "850440", "850450", "850710", "850720",
+        "850730", "850750", "850760", "850780", "850790", "851110", "851120", "851130", "851140", "851150",
+        "851180", "851420", "851680", "851713", "851714", "851761", "851762", "851769", "851771", "851810",
+        "851821", "851822", "851829", "851830", "851840", "851850", "851981", "851989", "852110", "852290",
+        "852610", "852691", "852692", "852842", "852852", "852862", "852910", "852990", "853110", "853120",
+        "853180", "853670", "853910", "853951", "854370", "854390", "854430", "880100", "880211", "880212",
+        "880220", "880230", "880240", "880529", "880610", "880621", "880622", "880623", "880624", "880629",
+        "880691", "880692", "880693", "880694", "880699", "880710", "880720", "880730", "880790", "900190",
+        "900290", "901410", "901420", "901490", "902000", "902511", "902519", "902580", "902590", "902610",
+        "902620", "902680", "902690", "902910", "902920", "902990", "903010", "903020", "903031", "903032",
+        "903033", "903039", "903040", "903084", "903089", "903090", "903180", "903190", "903210", "903220",
+        "940511", "940519", "940561", "940569", "940592", "940599", "962000", "980200", "981800"
+    }
+    
+    # Extrair os primeiros 4 e 6 dígitos do NCM para comparação
+    if pd.isna(ncm_code) or str(ncm_code).strip() == "":
+        if scenario == "pre_trump":
+            return 2.0
+        elif scenario == "liberation_day":
+            return 10.0
+        else:  # august_1st ou trump_final
+            return 50.0
+    
+    ncm_str = str(int(float(ncm_code)))  # Converter para string removendo decimais
+    hs4_code = ncm_str[:4] if len(ncm_str) >= 4 else ncm_str
+    hs6_code = ncm_str[:6] if len(ncm_str) >= 6 else ncm_str
+    
+    # CENÁRIO LIBERATION DAY (10% para todos, exceto exceções)
+    if scenario == "liberation_day":
+        if hs6_code in trump_0_percent_codes:
+            return 0.0  # Produtos isentos
+        elif hs4_code in trump_25_percent_codes:
+            return 25.0  # Veículos mantêm 25%
+        else:
+            return 10.0  # Todo o resto vai para 10%
+    
+    # CENÁRIOS AUGUST 1ST e TRUMP FINAL (50% para todos, exceto exceções)
+    elif scenario in ["august_1st", "trump_final"]:
+        # Prioridade: 1º isentos (0%), 2º veículos (25%), 3º específicos (10%), 4º padrão (50%)
+        if hs6_code in trump_0_percent_codes:
+            return 0.0  # Produtos isentos
+        elif hs4_code in trump_25_percent_codes:
+            return 25.0  # Veículos mantêm 25%
+        elif hs6_code in trump_10_percent_codes:
+            return 10.0  # Produtos com tarifa reduzida
+        else:
+            return 50.0  # Tarifa padrão para todo o resto
+    
+    # Fallback para cenários não reconhecidos
+    return 2.0
+
 def create_compact_tariff_simulator(export_data):
     """Cria simulador de tarifas compacto estilo tabela com Top 100"""
     
     st.subheader("🏛️ Simulador de Cenários Tarifários")
+    st.info("💡 **Evolução das Tarifas do Trump:** 0% para produtos isentos (energia, minerais críticos, eletrônicos), 25% para veículos (Seção 232), 10% para produtos específicos, 50% para o resto")
     
     # Criando tabela Top 100 para o simulador
     product_table = create_top100_for_simulator(export_data)
     
-    # Cenários rápidos
-    col1, col2, col3, col4 = st.columns(4)
+    # Cenários temporais baseados na cronologia do Trump
+    st.markdown("### 📅 **Cenários Temporais das Tarifas**")
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("Pré-Trump (2%)", use_container_width=True):
-            for i in range(len(product_table)):
-                st.session_state[f"tariff_{i}"] = 2.0
+        if st.button("🏛️ Pré-Trump (~2%)", use_container_width=True):
+            for i, (idx, row) in enumerate(product_table.iterrows()):
+                matching_products = export_data[export_data['Produto'] == row['Produto']]
+                ncm_code = None
+                if not matching_products.empty and 'CO_NCM' in matching_products.columns:
+                    ncm_code = matching_products.iloc[0]['CO_NCM']
+                trump_tariff = get_trump_tariff(ncm_code, scenario="pre_trump")
+                st.session_state[f"tariff_{i}"] = trump_tariff
     
     with col2:
-        if st.button("Pós-Trump (10%)", use_container_width=True):
-            for i in range(len(product_table)):
-                st.session_state[f"tariff_{i}"] = 10.0
-            
+        if st.button("🎯 Liberation Day (10%)", use_container_width=True):
+            for i, (idx, row) in enumerate(product_table.iterrows()):
+                matching_products = export_data[export_data['Produto'] == row['Produto']]
+                ncm_code = None
+                if not matching_products.empty and 'CO_NCM' in matching_products.columns:
+                    ncm_code = matching_products.iloc[0]['CO_NCM']
+                trump_tariff = get_trump_tariff(ncm_code, scenario="liberation_day")
+                st.session_state[f"tariff_{i}"] = trump_tariff
+    
     with col3:
-        if st.button("Extremo (50%)", use_container_width=True):
-            for i in range(len(product_table)):
-                st.session_state[f"tariff_{i}"] = 50.0
-                
-    with col4:
-        if st.button("Reset (0%)", use_container_width=True):
-            for i in range(len(product_table)):
-                st.session_state[f"tariff_{i}"] = 0.0
+        if st.button("⚡ 1º Agosto (50%)", use_container_width=True):
+            for i, (idx, row) in enumerate(product_table.iterrows()):
+                matching_products = export_data[export_data['Produto'] == row['Produto']]
+                ncm_code = None
+                if not matching_products.empty and 'CO_NCM' in matching_products.columns:
+                    ncm_code = matching_products.iloc[0]['CO_NCM']
+                trump_tariff = get_trump_tariff(ncm_code, scenario="august_1st")
+                st.session_state[f"tariff_{i}"] = trump_tariff
     
     st.markdown("### 📊 Simulador Interativo (Top 100 Produtos)")
     
@@ -525,13 +651,15 @@ def create_compact_tariff_simulator(export_data):
         # Inicializar tarifa se não existe
         tariff_key = f"tariff_{idx}"
         if tariff_key not in st.session_state:
-            # Usando tarifa base baseada no produto (simulando dados reais)
-            if "Petróleo" in row['Produto'] or "Açúcar" in row['Produto']:
-                base_tariff = 0.0  # Commodities geralmente têm tarifa baixa
-            elif "Aeronave" in row['Produto'] or "Máquina" in row['Produto']:
-                base_tariff = 2.5  # Manufaturados
-            else:
-                base_tariff = 5.0  # Outros produtos
+            # Buscar CO_NCM nos dados originais para aplicar tarifa do Trump
+            ncm_code = None
+            # Tentar encontrar o CO_NCM correspondente no export_data
+            matching_products = export_data[export_data['Produto'] == row['Produto']]
+            if not matching_products.empty and 'CO_NCM' in matching_products.columns:
+                ncm_code = matching_products.iloc[0]['CO_NCM']
+            
+            # Aplicar tarifa baseada na lista do Trump
+            base_tariff = get_trump_tariff(ncm_code)
             st.session_state[tariff_key] = base_tariff
         
         current_tariff = st.session_state[tariff_key]
@@ -591,15 +719,50 @@ def create_compact_tariff_simulator(export_data):
     
     col1, col2, col3, col4 = st.columns(4)
     
-    # Recalculando com valores atualizados
+    # Recalculando com valores atualizados usando TODOS os produtos para maior precisão
     total_impact = 0
     weighted_tariff_sum = 0
     
-    for idx, row in product_table.iterrows():
-        current_tariff = st.session_state.get(f"tariff_{idx}", 0)
-        impact = (current_tariff / 100) * (row['VL_FOB_MI'] / 1000)
+    # Preparar dados dos últimos 12 meses para cálculo preciso
+    dados_12m = export_data.copy()
+    dados_12m['Data'] = pd.to_datetime(dados_12m['Data'])
+    max_date = dados_12m['Data'].max()
+    start_date = max_date - pd.DateOffset(months=11)
+    dados_12m = dados_12m[dados_12m['Data'] >= start_date]
+    
+    # Agregar todos os produtos por NCM
+    produtos_12m = dados_12m.groupby('CO_NCM').agg({
+        'VL_FOB': 'sum',
+        'Produto': 'first'
+    }).reset_index()
+    
+    total_exportado_todos = produtos_12m['VL_FOB'].sum()
+    
+    # Detectar cenário atual baseado nos session_state
+    scenario_detected = "august_1st"  # default (cenário final)
+    if any(f"tariff_{i}" in st.session_state for i in range(len(product_table))):
+        # Analisar algumas tarifas para detectar o cenário
+        sample_tariffs = []
+        for idx in range(min(10, len(product_table))):
+            if f"tariff_{idx}" in st.session_state:
+                sample_tariffs.append(st.session_state[f"tariff_{idx}"])
+        
+        if sample_tariffs:
+            avg_tariff = sum(sample_tariffs) / len(sample_tariffs)
+            if avg_tariff < 5:
+                scenario_detected = "pre_trump"
+            elif avg_tariff < 15:
+                scenario_detected = "liberation_day"
+            else:
+                scenario_detected = "august_1st"
+    
+    # Calcular usando todos os produtos com o cenário detectado
+    for _, row in produtos_12m.iterrows():
+        current_tariff = get_trump_tariff(row['CO_NCM'], scenario=scenario_detected)
+        valor_bi = row['VL_FOB'] / 1_000_000_000  # Converter para bilhões
+        impact = (current_tariff / 100) * valor_bi
         total_impact += impact
-        weighted_tariff_sum += (current_tariff * row['VL_FOB_MI'] / total_export_value)
+        weighted_tariff_sum += (current_tariff * row['VL_FOB'] / total_exportado_todos)
     
     with col1:
         st.metric("Total Exportado", f"US$ {total_export_value/1000:.1f} Bi")
@@ -617,7 +780,117 @@ def create_compact_tariff_simulator(export_data):
             impact_pib_percentage = (total_impact / pib_brasil_bi) * 100
             st.metric("% do PIB", f"{impact_pib_percentage:.2f}%")
     
+    # Gráfico de evolução da tarifa efetiva por cenário
+    create_tariff_evolution_chart(export_data)
+    
     return edited_df
+
+def create_tariff_evolution_chart(export_data):
+    """Cria gráfico de barras mostrando evolução da tarifa efetiva nos cenários temporais"""
+    
+    st.markdown("### 📈 **Evolução da Tarifa Efetiva por Cenário**")
+    
+    # Verificar se há valores atuais no session_state para mostrar o cenário atual
+    product_table = create_top100_for_simulator(export_data)
+    current_scenario_tariff = 0
+    total_export_value = product_table['VL_FOB_MI'].sum()
+    
+    # Calcular tarifa efetiva atual baseada no session_state
+    if any(f"tariff_{i}" in st.session_state for i in range(len(product_table))):
+        weighted_tariff_sum = 0
+        for idx, row in product_table.iterrows():
+            current_tariff = st.session_state.get(f"tariff_{idx}", 0)
+            weighted_tariff_sum += (current_tariff * row['VL_FOB_MI'] / total_export_value)
+        current_scenario_tariff = weighted_tariff_sum
+        
+        # Mostrar cenário atual
+        st.info(f"🎯 **Cenário Atual:** {current_scenario_tariff:.1f}% de tarifa efetiva ponderada")
+    
+    # Calcular tarifa efetiva para cada cenário teórico usando a MESMA base do simulador
+    scenarios = {
+        "Pré-Trump": "pre_trump",
+        "Liberation Day": "liberation_day", 
+        "1º Agosto": "august_1st"
+    }
+    
+    # Calcular tarifa efetiva para cada cenário usando TODOS OS PRODUTOS (igual ao resumo)
+    scenario_results = []
+    
+    # Preparar dados dos últimos 12 meses para cálculo preciso (igual ao resumo)
+    dados_12m_grafico = export_data.copy()
+    dados_12m_grafico['Data'] = pd.to_datetime(dados_12m_grafico['Data'])
+    max_date_grafico = dados_12m_grafico['Data'].max()
+    start_date_grafico = max_date_grafico - pd.DateOffset(months=11)
+    dados_12m_grafico = dados_12m_grafico[dados_12m_grafico['Data'] >= start_date_grafico]
+    
+    # Agregar todos os produtos por NCM
+    produtos_12m_grafico = dados_12m_grafico.groupby('CO_NCM').agg({
+        'VL_FOB': 'sum',
+        'Produto': 'first'
+    }).reset_index()
+    
+    total_exportado_grafico = produtos_12m_grafico['VL_FOB'].sum()
+    
+    for scenario_name, scenario_code in scenarios.items():
+        weighted_tariff_sum = 0
+        
+        # Calcular usando TODOS os produtos (igual ao resumo)
+        for _, row in produtos_12m_grafico.iterrows():
+            current_tariff = get_trump_tariff(row['CO_NCM'], scenario=scenario_code)
+            weighted_tariff_sum += (current_tariff * row['VL_FOB'] / total_exportado_grafico)
+        
+        scenario_results.append({
+            'Cenário': scenario_name,
+            'Tarifa Efetiva (%)': weighted_tariff_sum
+        })
+    
+    # Criar DataFrame para o gráfico
+    df_evolution = pd.DataFrame(scenario_results)
+    
+    # Criar gráfico de barras com Plotly
+    import plotly.express as px
+    
+    fig = px.bar(
+        df_evolution,
+        x='Cenário',
+        y='Tarifa Efetiva (%)',
+        title='Evolução da Tarifa Efetiva por Cenário Temporal',
+        color='Tarifa Efetiva (%)',
+        color_continuous_scale='Reds',
+        text='Tarifa Efetiva (%)'
+    )
+    
+    # Customizar o gráfico
+    fig.update_traces(
+        texttemplate='%{text:.1f}%',
+        textposition='outside'
+    )
+    
+    fig.update_layout(
+        height=500,
+        showlegend=False,
+        xaxis_title="Cenário Temporal",
+        yaxis_title="Tarifa Efetiva (%)",
+        title_x=0.5,
+        yaxis=dict(range=[0, max(df_evolution['Tarifa Efetiva (%)']) * 1.1])
+    )
+    
+    # Exibir o gráfico
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Mostrar tabela resumo
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**📊 Resumo dos Cenários:**")
+        for result in scenario_results:
+            st.write(f"• **{result['Cenário']}**: {result['Tarifa Efetiva (%)']:.1f}%")
+    
+    with col2:
+        st.markdown("**📅 Cronologia:**")
+        st.write("• **Pré-Trump**: Situação atual (~2%)")
+        st.write("• **Liberation Day**: 10% geral + exceções")
+        st.write("• **1º Agosto**: 50% geral + exceções (cenário final)")
 
 # =============================================================================
 # FUNÇÃO PRINCIPAL DO DASHBOARD
