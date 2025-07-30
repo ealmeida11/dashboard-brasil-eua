@@ -59,13 +59,9 @@ def load_data():
         tuple: (export_data, import_data) ou (None, None) em caso de erro
     """
     try:
-        print("📊 Carregando dados de exportação e importação...")
-        
         # Carregando arquivos CSV processados anteriormente
         export_data = pd.read_csv('dados_brasil_eua_exportacao.csv')
         import_data = pd.read_csv('dados_brasil_eua_importacao.csv')
-        
-        print(f"✅ Dados carregados: {len(export_data):,} exportações, {len(import_data):,} importações")
         
         # Convertendo colunas de data para datetime
         export_data['Data'] = pd.to_datetime(export_data['Data'])
@@ -79,23 +75,18 @@ def load_data():
         return export_data, import_data
         
     except FileNotFoundError as e:
-        st.error(f"❌ Arquivo não encontrado: {e}")
-        st.info("💡 Baixando dados do GitHub Release...")
-        
         # URLs dos arquivos no GitHub Release
         release_base_url = "https://github.com/ealmeida11/dashboard-brasil-eua/releases/download/v1.0.0/"
         export_file = 'dados_brasil_eua_exportacao.csv'
         import_file = 'dados_brasil_eua_importacao.csv'
         
         try:
-            # Baixa dados de exportação
-            st.info("📥 Baixando dados de exportação...")
+            # Baixa dados de exportação silenciosamente
             response = requests.get(release_base_url + export_file)
             with open(export_file, 'wb') as f:
                 f.write(response.content)
             
-            # Baixa dados de importação  
-            st.info("📥 Baixando dados de importação...")
+            # Baixa dados de importação silenciosamente
             response = requests.get(release_base_url + import_file)
             with open(import_file, 'wb') as f:
                 f.write(response.content)
@@ -111,8 +102,7 @@ def load_data():
             return export_data, import_data
             
         except Exception as download_error:
-            st.error(f"❌ Erro ao baixar dados do GitHub: {download_error}")
-            st.error("💡 Verifique se os arquivos estão disponíveis no GitHub Release v1.0.0")
+            st.error("❌ Erro ao carregar dados")
             return None, None
     except Exception as e:
         st.error(f"❌ Erro ao carregar dados: {e}")
@@ -674,24 +664,7 @@ def main():
         export_data, import_data = load_data()
         
         if export_data is None or import_data is None:
-            st.error("❌ **Dados não disponíveis**")
-            st.warning("⚠️ Os arquivos CSV não foram encontrados e o GitHub Release ainda não foi criado.")
-            
-            st.info("📋 **Para resolver este problema:**")
-            st.markdown("""
-            1. **Acesse:** https://github.com/ealmeida11/dashboard-brasil-eua/releases
-            2. **Clique:** "Create a new release"
-            3. **Tag version:** `v1.0.0`
-            4. **Release title:** "Dados do Dashboard Brasil-EUA"
-            5. **Anexe os arquivos:**
-               - `dados_brasil_eua_exportacao.csv`
-               - `dados_brasil_eua_importacao.csv`
-            6. **Publish release**
-            
-            Após criar o release, o dashboard carregará automaticamente os dados!
-            """)
-            
-            st.info("💡 **Alternativa:** Faça upload manual dos arquivos CSV na pasta raiz do projeto.")
+            st.error("❌ Erro ao carregar dados. Verifique a conexão e tente novamente.")
             st.stop()
         
         trade_monthly = create_monthly_aggregation(export_data, import_data)
