@@ -756,13 +756,27 @@ def create_compact_tariff_simulator(export_data):
             else:
                 scenario_detected = "august_1st"
     
-    # Calcular usando todos os produtos com o cenário detectado
-    for _, row in produtos_12m.iterrows():
-        current_tariff = get_trump_tariff(row['CO_NCM'], scenario=scenario_detected)
-        valor_bi = row['VL_FOB'] / 1_000_000_000  # Converter para bilhões
+    # Calcular usando os valores EDITADOS pelo usuário na tabela
+    # Primeiro, vamos calcular para os produtos da tabela (que o usuário pode ter editado)
+    for idx, row in product_table.iterrows():
+        # Usar a tarifa editada pelo usuário (do session_state)
+        current_tariff = st.session_state.get(f"tariff_{idx}", 0)
+        valor_bi = row['VL_FOB_MI'] / 1000  # Já está em milhões, converter para bilhões
         impact = (current_tariff / 100) * valor_bi
         total_impact += impact
-        weighted_tariff_sum += (current_tariff * row['VL_FOB'] / total_exportado_todos)
+        weighted_tariff_sum += (current_tariff * row['VL_FOB_MI'] / total_export_value)
+    
+    # Para produtos não listados na tabela (se houver), usar o cenário detectado
+    produtos_na_tabela = set(product_table['Produto'].tolist())
+    for _, row in produtos_12m.iterrows():
+        if row['Produto'] not in produtos_na_tabela:
+            current_tariff = get_trump_tariff(row['CO_NCM'], scenario=scenario_detected)
+            valor_bi = row['VL_FOB'] / 1_000_000_000  # Converter para bilhões
+            impact = (current_tariff / 100) * valor_bi
+            total_impact += impact
+            # Calcular peso baseado no total geral (não apenas da tabela)
+            weight = row['VL_FOB'] / total_exportado_todos
+            weighted_tariff_sum += (current_tariff * weight)
     
     with col1:
         st.metric("Total Exportado", f"US$ {total_export_value/1000:.1f} Bi")
